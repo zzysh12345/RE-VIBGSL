@@ -4,6 +4,10 @@ def parameter_parser():
 
     parser = argparse.ArgumentParser()
 
+    parser.add_argument("--model", type=str, default="GCN")
+
+    parser.add_argument('--gpu', type=str, default='0', help="Visible GPU")
+
     parser.add_argument("--dataset_name", type=str, default="IMDB-BINARY", help="Folder with training graph jsons.")
 
     parser.add_argument("--backbone", type=str, default="GCN", help="GCN, GAT, GIN")

@@ -10,16 +10,17 @@ from gsl import *
 from utils import *
 from param_parser import parameter_parser
 import os
+import pandas as pd
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-torch.manual_seed(6789)
-np.random.seed(6789)
-torch.cuda.manual_seed_all(6789)
-os.environ['PYTHONHASHSEED'] = str(6789)
+torch.manual_seed(42)
+np.random.seed(42)
+torch.cuda.manual_seed_all(42)
+os.environ['PYTHONHASHSEED'] = str(42)
 
 
 def cross_validation_with_val_set(dataset, model, folds, epochs, batch_size, test_batch_size, lr,
-                                  lr_decay_factor, lr_decay_step_size, weight_decay, logger=None):
+                                  lr_decay_factor, lr_decay_step_size, weight_decay, logger=None, args=None):
     val_losses, val_accs, test_accs, durations = [], [], [], []
     for fold, (train_idx, test_idx, val_idx) in enumerate(zip(*k_fold(dataset, folds))):
         if isinstance(dataset, Dataset):
@@ -141,6 +142,18 @@ def cross_validation_with_val_set(dataset, model, folds, epochs, batch_size, tes
     print(test_acc)
     print('Val Loss: {:.4f}, Test Accuracy: {:.3f}+{:.3f}, Duration: {:.3f}'
           .format(val_loss_mean, test_acc_mean, test_acc_std, duration_mean))
+
+    text = '{:.2f} ± {:.2f}'.format(test_acc_mean, test_acc_std)
+
+    if not os.path.exists('results'):
+        os.makedirs('results')
+    if os.path.exists('results/performance.csv'):
+        records = pd.read_csv('results/performance.csv')
+        records.loc[len(records)] = {'method': model.__repr__(), 'data': args.dataset_name, 'acc': text}
+        records.to_csv('results/performance.csv', index=False)
+    else:
+        records = pd.DataFrame([[model.__repr__(), args.dataset_name, text]], columns=['method', 'data', 'acc'])
+        records.to_csv('results/performance.csv', index=False)
 
     return test_acc, test_acc_mean, test_acc_std
 
