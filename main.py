@@ -14,6 +14,7 @@ def main():
     print("num_node_features : %d, num_classes : %d"%(num_node_features, num_classes))
 
     model = VIBGSL(args, num_node_features, num_classes)
+    # model = GCN(args, num_node_features, num_classes, args.hidden_dim)
     print(model.__repr__())
     cross_validation_with_val_set(dataset, model, args.folds, args.epochs, args.batch_size, args.test_batch_size,
                                   args.lr, args.lr_decay_factor, args.lr_decay_step_size,

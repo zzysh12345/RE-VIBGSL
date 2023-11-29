@@ -38,6 +38,7 @@ def cross_validation_with_val_set(dataset, model, folds, epochs, batch_size, tes
         infos = dict()
 
         if 'adj' in train_dataset[0]:
+            # 对于用的四个数据集都false
             train_loader = DenseLoader(train_dataset, batch_size, shuffle=True)
             val_loader = DenseLoader(val_dataset, test_batch_size, shuffle=False)
             test_loader = DenseLoader(test_dataset, test_batch_size, shuffle=False)
@@ -108,7 +109,7 @@ def cross_validation_with_val_set(dataset, model, folds, epochs, batch_size, tes
             if epoch % lr_decay_step_size == 0:
                 for param_group in optimizer.param_groups:
                     param_group['lr'] = lr_decay_factor * param_group['lr']
-            if epoch % 10 == 0:
+            if epoch % 1 == 0:
                 print('Epoch: {:d}, train loss: {:.3f}, train acc: {:.3f}, val loss: {:.5f}, val acc: {:.3f}, test scc: {:.3f}'
                       .format(epoch, eval_info["train_loss"], eval_info["train_acc"], eval_info["val_loss"], eval_info["val_acc"], eval_info["test_acc"]))
 
@@ -227,6 +228,7 @@ def train_VGIB(model, optimizer, loader):
     total_KL_loss = 0
     correct = 0
     for data in loader:
+        # print(data)
         optimizer.zero_grad()
         data = data.to(device)
         (mu, std), logits, _, _ = model(data)
@@ -235,6 +237,7 @@ def train_VGIB(model, optimizer, loader):
 
         loss = class_loss + model.beta * KL_loss
         loss.backward()
+        # print(model.graph_learner.lin1.weight)
         total_loss += loss.item() * num_graphs(data)
         total_class_loss += class_loss.item() * num_graphs(data)
         total_KL_loss += KL_loss.item() * num_graphs(data)

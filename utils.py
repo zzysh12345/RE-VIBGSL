@@ -1,7 +1,6 @@
 from copy import deepcopy
 from numbers import Number
 from torch.autograd import Variable
-from texttable import Texttable
 from param_parser import parameter_parser
 import os.path as osp
 import numpy as np
@@ -38,17 +37,20 @@ class NormalizedDegree(object):
 
 def get_dataset(name, sparse=True, cleaned=False):
     if name in ["IMDB-BINARY", "REDDIT-BINARY", "COLLAB", "IMDB-MULTI"]:
-        path = osp.join(osp.dirname(osp.realpath(__file__)), '..', 'data')
+        path = osp.join(osp.dirname(osp.realpath(__file__)), '.', 'data')
         dataset = TUDataset(path, name, cleaned=cleaned)
         dataset.data.edge_attr = None
 
         if dataset.data.x is None:
+            # 如果没有节点特征，使用度数作为节点特征
+            # 所有图的最大度数
             max_degree = 0
             degs = []
             for data in dataset:
                 degs += [degree(data.edge_index[0], dtype=torch.long)]
                 max_degree = max(max_degree, degs[-1].max().item())
 
+            # 两种安排度数特征的方式
             if max_degree < 1000:
                 dataset.transform = T.OneHotDegree(max_degree)
             else:
@@ -57,6 +59,7 @@ def get_dataset(name, sparse=True, cleaned=False):
                 dataset.transform = NormalizedDegree(mean, std)
 
         if not sparse:
+            # sparse恒true，下面不运行
             num_nodes = max_num_nodes = 0
             for data in dataset:
                 num_nodes += data.num_nodes
@@ -80,7 +83,23 @@ def get_dataset(name, sparse=True, cleaned=False):
                 dataset.transform = T.Compose(
                     [dataset.transform, T.ToDense(num_nodes)])
 
+        # 用来测试adj的重要性
+        # dataset.transform = T.Compose(
+        #     [dataset.transform, RemoveAdj()])
+
         return dataset
+
+
+class RemoveAdj(object):
+    def __init__(self):
+        pass
+
+    def __call__(self, data):
+        n = data.x.shape[0]
+        adj = torch.eye(n)
+        adj = adj.nonzero(as_tuple=True)
+        data.edge_index = torch.stack(adj)
+        return data
 
 
 def print_dataset(dataset):

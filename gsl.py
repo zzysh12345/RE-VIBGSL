@@ -72,6 +72,7 @@ class VIBGSL(torch.nn.Module):
 
     def learn_graph(self, node_features, graph_skip_conn=None, graph_include_self=False, init_adj=None):
         new_feature, new_adj = self.graph_learner(node_features)
+        # print(new_adj)
 
         if graph_skip_conn in (0.0, None):
             # add I
@@ -83,7 +84,7 @@ class VIBGSL(torch.nn.Module):
         else:
             # skip connection
             new_adj = graph_skip_conn * init_adj + (1 - graph_skip_conn) * new_adj
-
+        # print(new_adj)
         return new_feature, new_adj
 
     def reparametrize_n(self, mu, std, n=1):
@@ -104,11 +105,12 @@ class VIBGSL(torch.nn.Module):
                                                     init_adj=raw_adj)
             new_edge_index, new_edge_attr = dense_to_sparse(new_adj)
 
-            new_graph = Data(x=new_feature, edge_index=new_edge_index, edge_attr=new_edge_attr)
+            new_graph = Data(x=new_feature, edge_index=new_edge_index, edge_attr=new_edge_attr)   # 有必要这样吗？能不能直接合成一个新的edge
             new_graphs_list.append(new_graph)
         loader = DataLoader(new_graphs_list, batch_size=len(new_graphs_list))
         batch_data = next(iter(loader))
-        node_embs, _ = self.backbone_gnn(batch_data.x, batch_data.edge_index)
+        node_embs, _ = self.backbone_gnn(batch_data.x, batch_data.edge_index)   # edge attr没用？可导吗？
+        # node_embs, _ = self.backbone_gnn(batch_data.x, batch_data.edge_index, batch_data.edge_attr)  # edge attr没用？可导吗？
         graph_embs = global_mean_pool(node_embs, batch_data.batch)
 
 

@@ -1,6 +1,6 @@
 import torch
 from torch_geometric.nn import GCNConv, global_mean_pool, JumpingKnowledge
-from torch_geometric.utils import accuracy, to_dense_adj, dense_to_sparse
+from torch_geometric.utils import to_dense_adj, dense_to_sparse
 from torch_geometric.transforms import ToSparseTensor
 import torch.nn as nn
 from torch.nn import Linear
@@ -168,6 +168,7 @@ class GraphLearner(nn.Module):
             context_fc = torch.relu(self.lin2(torch.relu(self.lin1(context))))
             attention = torch.matmul(context_fc, context_fc.transpose(-1, -2))
             markoff_value = 0
+            # print(attention)
         elif self.metric_type == 'multi_mlp':
             attention = 0
             for _ in range(self.num_pers):
@@ -221,6 +222,7 @@ class GraphLearner(nn.Module):
 
         weighted_adjacency_matrix = RelaxedBernoulli(temperature=torch.Tensor([temperature]).to(attention.device),
                                                      probs=attention).rsample()
+        # print(weighted_adjacency_matrix)
         eps = 0.5
         mask = (weighted_adjacency_matrix > eps).detach().float()
         weighted_adjacency_matrix = weighted_adjacency_matrix * mask + 0.0 * (1 - mask)
